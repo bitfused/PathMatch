@@ -1,0 +1,14 @@
+
+.metadata/version.ini
+
+.metadata/.lock
+
+.metadata/.log
+
+.metadata/.plugins/org.eclipse.core.resources/.root/.indexes/properties.index
+
+.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.jdt.ui.prefs
+
+.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.ui.prefs
+
+.metadata/.plugins/org.eclipse.ui.workbench/workingsets.xml
