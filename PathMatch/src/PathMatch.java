@@ -37,6 +37,8 @@ public class PathMatch {
 			}
 		}
 		
+		bufRead.close();
+		input.close();
 		input = new FileReader(INPUT_NAME); // for some reason reset is not supported...
 		bufRead = new BufferedReader(input);
 		while ((myLine = bufRead.readLine()) != null) {    
@@ -49,6 +51,8 @@ public class PathMatch {
 				}
 			}
 		}
+		bufRead.close();
+		input.close();
 	}
 	
 	public static void readQuery() throws IOException {
@@ -60,9 +64,14 @@ public class PathMatch {
 		while ((myLine = bufRead.readLine()) != null) {   
 			query.add(myLine);
 		}
+		bufRead.close();
+		fr.close();
 	}
 	
-	public static void readCorrespondence() {}
+	public static void readCorrespondence() {
+		
+		
+	}
 	public static void generateQueryCorrespondences() {}
 	public static void calculateQueryOrders() {}
 	public static void calculateQueryWeights() {}
