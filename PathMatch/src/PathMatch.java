@@ -8,11 +8,13 @@ import java.util.List;
 
 public class PathMatch {
 	static String INPUT_NAME = "input";
+	static String QUERY_NAME = "query";
 	static int graphSize;
 	static int[][] graph;
 	static int[][] distance;
 	static int[][] path;
 	static List<String> names;
+	static List<String> query;
 	
 	
 	public static void readGraph() throws IOException {
@@ -47,9 +49,19 @@ public class PathMatch {
 				}
 			}
 		}
-		
 	}
-	public static void readQuery() {}
+	
+	public static void readQuery() throws IOException {
+		query = new LinkedList<>();
+		FileReader fr = new FileReader(QUERY_NAME);
+		BufferedReader bufRead = new BufferedReader(fr);
+		String myLine = null;
+
+		while ((myLine = bufRead.readLine()) != null) {   
+			query.add(myLine);
+		}
+	}
+	
 	public static void readCorrespondence() {}
 	public static void generateQueryCorrespondences() {}
 	public static void calculateQueryOrders() {}
@@ -84,11 +96,13 @@ public class PathMatch {
 	public static void main(String [] args) {
 		try {
 			readGraph();
+			readQuery();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println(Arrays.deepToString(graph));
+		//System.out.println(Arrays.deepToString(graph));
+		System.out.println(query.toString());		
 	}
 	
 }
