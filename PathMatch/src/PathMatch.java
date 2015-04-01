@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.Buffer;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,8 +10,9 @@ import java.util.List;
 public class PathMatch {
 	static String INPUT_NAME = "input";
 	static String QUERY_NAME = "query";
-    static String SCORE_NAME = "corr";
+    static String CORR_NAME = "corr";
 	static int graphSize;
+    static double[][] correspondence;
 	static int[][] graph;
 	static int[][] distance;
 	static int[][] path;
@@ -19,9 +21,38 @@ public class PathMatch {
 
 
     private static void readCorr() throws IOException {
-        
+        // Correspondence file contains the correspondences (or substitution scores)
+        // Each line contains the correspondences between vertices in the query path and the input graph
+
+        // Initialize the correspondence matrix
+        correspondence = new double[query.size()][graphSize];
 
 
+        // Parse the file and fill in the graph
+        FileReader corr = new FileReader(CORR_NAME);
+        BufferedReader br = new BufferedReader(corr);
+        String myLine = null;
+
+        String v1;
+        String v2;
+        double value;
+
+        while ((myLine = br.readLine()) != null) {
+
+            String[] line = myLine.split(" +");
+
+            v1 = line[0];
+            v2 = line[1];
+            value = Double.parseDouble(line[2]);
+
+            int i = query.indexOf(v1);
+            int j = names.indexOf(v2);
+
+            correspondence[i][j] = value;
+        }
+
+        br.close();
+        corr.close();
     }
 
 
@@ -63,7 +94,7 @@ public class PathMatch {
         // Reopen the input file
 		input = new FileReader(INPUT_NAME); // for some reason reset is not supported...
 		bufRead = new BufferedReader(input);
-		while ((myLine = bufRead.readLine()) != null) {    
+		while ((myLine = bufRead.readLine()) != null) {
 			String[] line = myLine.split(" ");
 
             // For each line (first vertex), add the vertices (2nd vertex onwards) that it connects to.
@@ -134,6 +165,8 @@ public class PathMatch {
 			readGraph();
 			readQuery();
             readCorr();
+
+            System.out.println(correspondence[0][0]);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
