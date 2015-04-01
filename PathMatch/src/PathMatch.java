@@ -9,21 +9,41 @@ import java.util.List;
 public class PathMatch {
 	static String INPUT_NAME = "input";
 	static String QUERY_NAME = "query";
+    static String SCORE_NAME = "corr";
 	static int graphSize;
 	static int[][] graph;
 	static int[][] distance;
 	static int[][] path;
 	static List<String> names;
 	static List<String> query;
-	
-	
-	public static void readGraph() throws IOException {
+
+
+    private static void readCorr() throws IOException {
+        
+
+
+    }
+
+
+
+    public static void readGraph() throws IOException {
+        // Input file contains the input graph
+        // Each line defines all the edges from the first vertex to all the other vertices.
+        // The edges/lines represents the vertices that are related (proteins or metabolic processes that are related).
+
+        // v1 v2 v3 v4 ==> 2 directed edges:  (v1, v3) and (v1, v4)
+        //                 1 undirected edge: (v1, v2)
+        // v2 v1 v3 v4 ==> 2 directed edges:  (v2, v3) and (v2, v4)
+        //                 1 undirected edge: (v2, v1)
+
 		names = new LinkedList<>();
 		FileReader input = new FileReader(INPUT_NAME);
 		BufferedReader bufRead = new BufferedReader(input);
 		String myLine = null;
 
-		while ((myLine = bufRead.readLine()) != null) {    
+		while ((myLine = bufRead.readLine()) != null) {
+
+            // Add the first vertex of each line into the linked list
 			names.add(myLine.substring(0, myLine.indexOf(" ")));
 		}
 		
@@ -39,10 +59,14 @@ public class PathMatch {
 		
 		bufRead.close();
 		input.close();
+
+        // Reopen the input file
 		input = new FileReader(INPUT_NAME); // for some reason reset is not supported...
 		bufRead = new BufferedReader(input);
 		while ((myLine = bufRead.readLine()) != null) {    
 			String[] line = myLine.split(" ");
+
+            // For each line (first vertex), add the vertices (2nd vertex onwards) that it connects to.
 			int i = names.indexOf(line[0]);
 			for (int n = 1; n < line.length; n++) {
 				int j = names.indexOf(line[n]);
@@ -56,6 +80,9 @@ public class PathMatch {
 	}
 	
 	public static void readQuery() throws IOException {
+        // Query file contains contains the query path in sorted order (line by line).
+        // Each line contains the name of the vertex.
+
 		query = new LinkedList<>();
 		FileReader fr = new FileReader(QUERY_NAME);
 		BufferedReader bufRead = new BufferedReader(fr);
@@ -106,6 +133,7 @@ public class PathMatch {
 		try {
 			readGraph();
 			readQuery();
+            readCorr();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -113,5 +141,5 @@ public class PathMatch {
 		//System.out.println(Arrays.deepToString(graph));
 		System.out.println(query.toString());		
 	}
-	
+
 }
