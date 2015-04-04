@@ -8,7 +8,13 @@ import java.util.List;
 
 
 public class PathMatch {
-	static String INPUT_NAME = "input";
+
+    /* CONSTANTS */
+    int NUM_TOP_PATHS = 10;                 // Number of pathways with top scores that are required to be in output
+    int MAX_NUM_MISMATCHES_AND_GAPS = 1;    // Maximum number of mismatches and gaps allowed
+    double INDEL_PENALTY = 1.0;             // Penalty for mismatches and gaps
+
+    static String INPUT_NAME = "input";
 	static String QUERY_NAME = "query";
     static String CORR_NAME = "corr";
 	static int graphSize;
@@ -20,7 +26,8 @@ public class PathMatch {
 	static List<String> query;
 
 
-    private static void readCorr() throws IOException {
+
+    private static void readCorrespondence() throws IOException {
         // Correspondence file contains the correspondences (or substitution scores)
         // Each line contains the correspondences between vertices in the query path and the input graph
 
@@ -54,8 +61,6 @@ public class PathMatch {
         br.close();
         corr.close();
     }
-
-
 
     public static void readGraph() throws IOException {
         // Input file contains the input graph
@@ -125,16 +130,15 @@ public class PathMatch {
 		bufRead.close();
 		fr.close();
 	}
-	
-	public static void readCorrespondence() {
-		
-		
-	}
-	public static void generateQueryCorrespondences() {}
+
+	public static void generateQueryCorrespondences() {
+        //
+    }
 	public static void calculateQueryOrders() {}
 	public static void calculateQueryWeights() {}
 	public static void queryTopPaths() {}
-	public static void floyd() {
+
+    public static void floyd() {
 		// initialize
 		for(int i = 0; i < graphSize; i++) {
 			distance[i][i] = 0;
@@ -164,15 +168,15 @@ public class PathMatch {
 		try {
 			readGraph();
 			readQuery();
-            readCorr();
+            readCorrespondence();
 
-            System.out.println(correspondence[0][0]);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		//System.out.println(Arrays.deepToString(graph));
-		System.out.println(query.toString());		
+//		System.out.println(query.toString());
+        System.out.println(correspondence[0][0]);
 	}
 
 }
