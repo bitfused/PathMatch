@@ -41,6 +41,9 @@ public class PathMatch {
         public void addEdge(Edge e) {
             edges.add(e);
         }
+        public String getNode() {
+            return fromNode;
+        }
     }
 
     public static class Edge {
@@ -85,9 +88,9 @@ public class PathMatch {
 
             if (value <= CORR_E_VALUE_CUTOFF) {
                 if(value <= 1e-299){
-                    correspondence[i][j]=Math.log(1e-299);
+                    correspondence[i][j]=Math.log(1e-299) * -1;
                 } else {
-                    correspondence[i][j]=Math.log(value);
+                    correspondence[i][j]=Math.log(value) * -1;
                 }
             }
         }
@@ -188,14 +191,16 @@ public class PathMatch {
             // Add to the "level" list.
             for (int j=0; j<names.size(); j++) {
                 if (correspondence[i][j] != 0) {
-                    Vertex v = new Vertex(names.get(j), correspondence[i][j]);
+                    int lvl = i + 1;
+                    String fromName = names.get(j) + "_Lvl:" + lvl;
+                    Vertex v = new Vertex(fromName, correspondence[i][j]);
 
                     // Add the edge "from Vertex to Sink", initialized to zero.
                     Edge e1 = new Edge("Sink", 0);
                     v.addEdge(e1);
 
                     // Add the edge "from Source to Vertex", initialized to zero.
-                    Edge e2 = new Edge(names.get(j), 0);
+                    Edge e2 = new Edge(fromName, 0);
                     s.addEdge(e2);
 
                     level.add(v);
@@ -213,8 +218,6 @@ public class PathMatch {
         tLevel.add(t);
         dag.add(tLevel);
 
-        System.out.println(dag.size());
-
         // Add the edge weights
         calculateDAGWeights();
     }
@@ -226,15 +229,44 @@ public class PathMatch {
 
         // Calculate the edge weights for non-source and non-sink vertices
         for (int i=1; i<levels-1; i++) {
-            // For each vertex in the current level of G' update the weights
-            for (Vertex v : dag.get(i)) {
 
+            // For each vertex v in the current level of G':
+            for (Vertex v : dag.get(i)) {
+                String fromNode = v.getNode().split("_Lvl:")[0];
+
+                int levelsDown = 1;
+                // Repeat process for however many levels below as allowed by the max number of gaps
+                while ( levelsDown <= MAX_NUM_MISMATCHES_AND_GAPS+1  && i+levelsDown < levels-1 ) {
+                    // Try to connect an edge to the level below:
+                    List<Vertex> nextLevel = dag.get(i+levelsDown);
+
+                    // Get each vertex nextV from the level below
+                    for (Vertex nextV : nextLevel) {
+                        String toNode = nextV.getNode().split("_Lvl:")[0];
+
+                        // Find all the reachable neighbours for v
+                        // Adjacent neighbour, hence no gap penalty
+                        // Edge weight will be the weight(v)
+                        int dist = distance[names.indexOf(fromNode)][names.indexOf(toNode)];
+                        if (dist <= MAX_NUM_MISMATCHES_AND_GAPS + 1) {
+                            int level = i + levelsDown;
+                            Edge e = new Edge(toNode+"_Lvl:"+level, v.weight + INDEL_PENALTY*(dist-1));
+                            v.addEdge(e);
+                        }
+                        // "toNode" is not reachable.
+                        // Edge weight will be MAX_FLT
+                        else {
+//                            Edge e = new Edge(toNode+"_Lvl:"+level, MAX_FLT);
+//                            v.addEdge(e);
+                        }
+                    }
+                    levelsDown++;
+                }
             }
         }
 
-
-
-
+        // Calculate the edge weights for source and sink vertices
+        System.out.println(dag.size());
     }
 
 
@@ -242,6 +274,10 @@ public class PathMatch {
 
     public static void floyd() {
 		// initialize
+
+        distance = new int[graphSize][graphSize];
+        path = new int[graphSize][graphSize];
+
 		for(int i = 0; i < graphSize; i++) {
 			distance[i][i] = 0;
 			for(int j = 0; j < graphSize; j++) {
@@ -271,6 +307,7 @@ public class PathMatch {
 			readGraph();
 			readQuery();
             readCorrespondence();
+            floyd();
             createDAG();
 
 		} catch (IOException e) {
