@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.Buffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -10,9 +11,10 @@ import java.util.List;
 public class PathMatch {
 
     /* CONSTANTS */
-    int NUM_TOP_PATHS = 10;                 // Number of pathways with top scores that are required to be in output
-    int MAX_NUM_MISMATCHES_AND_GAPS = 1;    // Maximum number of mismatches and gaps allowed
-    double INDEL_PENALTY = 1.0;             // Penalty for mismatches and gaps
+    static int NUM_TOP_PATHS = 1;                  // Number of pathways with top scores that are required to be in output
+    static int MAX_NUM_MISMATCHES_AND_GAPS = 1;    // Maximum number of mismatches and gaps allowed
+    static double INDEL_PENALTY = 1.0;             // Penalty for mismatches and gaps
+    static double CORR_E_VALUE_CUTOFF= 1e200;      // Cutoff for determining similarity
 
     static String INPUT_NAME = "input";
 	static String QUERY_NAME = "query";
@@ -21,15 +23,39 @@ public class PathMatch {
     static double[][] correspondence;
 	static int[][] graph;
 	static int[][] distance;
-	static int[][] path;
-	static List<String> names;
-	static List<String> query;
+    static List<List<Vertex>> dag;
+    static int[][] path;
+	static List<String> names;           // List of nodes in input graph - G
+	static List<String> query;           // List of nodes in query path  - Q
 
+    public static class Vertex {
 
+        String fromNode;
+        double weight;
+        List<Edge> edges;
+
+        public Vertex(String name, double wt) {
+            fromNode = name;
+            weight = wt;
+            edges = new ArrayList<>();
+        }
+
+        public class Edge {
+            String toNode;
+            double weight;
+
+            public Edge(String name, double wt) {
+                toNode = name;
+                weight = wt;
+            }
+
+        }
+    }
 
     private static void readCorrespondence() throws IOException {
         // Correspondence file contains the correspondences (or substitution scores)
         // Each line contains the correspondences between vertices in the query path and the input graph
+        // Log the correspondences if they are below the cutoff value and are from blast2seq pathway.
 
         // Initialize the correspondence matrix
         correspondence = new double[query.size()][graphSize];
@@ -55,11 +81,16 @@ public class PathMatch {
             int i = query.indexOf(v1);
             int j = names.indexOf(v2);
 
-            correspondence[i][j] = value;
+            if (value <= CORR_E_VALUE_CUTOFF) {
+                if(value <= 1e-299){
+                    correspondence[i][j]=Math.log(1e-299);
+                } else {
+                    correspondence[i][j]=Math.log(value);
+                }
+            }
         }
-
-        br.close();
-        corr.close();
+            br.close();
+            corr.close();
     }
 
     public static void readGraph() throws IOException {
@@ -131,11 +162,48 @@ public class PathMatch {
 		fr.close();
 	}
 
-	public static void generateQueryCorrespondences() {
-        //
+    public static void createDAG() {
+        // Create a DAG G' from the query path Q and the input graph G
+
+        int totalNodesInDAG = 0;
+
+        // Initialize the number of levels in the G'
+        int numLevels = query.size() + 2;
+        dag = new ArrayList<>(numLevels);
+
+        List<Vertex> sLevel = new ArrayList<Vertex>(1);
+        Vertex s = new Vertex("Source", 0);
+        sLevel.add(s);
+        dag.add(sLevel);
+
+        for (int i=0; i<query.size(); i++) {
+            // Create a new list for the current level
+            List<Vertex> level = new ArrayList<Vertex>();
+
+            // Find all the associated vertices to the current query path "level"
+            // Add to the "level" list.
+            for (int j=0; j<names.size(); j++) {
+                if (correspondence[i][j] != 0) {
+                    Vertex v = new Vertex(names.get(j), correspondence[i][j]);
+                    level.add(v);
+                    totalNodesInDAG++;
+                }
+            }
+
+            // Add the completed "level" list to G'
+            dag.add(level);
+        }
+
+        List<Vertex> tLevel = new ArrayList<Vertex>(1);
+        Vertex t = new Vertex("Sink", 0);
+        tLevel.add(t);
+        dag.add(tLevel);
+
+        System.out.println(dag.size());
+
     }
-	public static void calculateQueryOrders() {}
-	public static void calculateQueryWeights() {}
+
+	public static void calculateDAGWeights() {}
 	public static void queryTopPaths() {}
 
     public static void floyd() {
@@ -169,6 +237,7 @@ public class PathMatch {
 			readGraph();
 			readQuery();
             readCorrespondence();
+            createDAG();
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -176,7 +245,7 @@ public class PathMatch {
 		}
 		//System.out.println(Arrays.deepToString(graph));
 //		System.out.println(query.toString());
-        System.out.println(correspondence[0][0]);
+//        System.out.println(correspondence[0][0]);
 	}
 
 }
