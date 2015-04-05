@@ -29,7 +29,6 @@ public class PathMatch {
 	static List<String> query;           // List of nodes in query path  - Q
 
     public static class Vertex {
-
         String fromNode;
         double weight;
         List<Edge> edges;
@@ -39,18 +38,21 @@ public class PathMatch {
             weight = wt;
             edges = new ArrayList<>();
         }
-
-        public class Edge {
-            String toNode;
-            double weight;
-
-            public Edge(String name, double wt) {
-                toNode = name;
-                weight = wt;
-            }
-
+        public void addEdge(Edge e) {
+            edges.add(e);
         }
     }
+
+    public static class Edge {
+        String toNode;
+        double weight;
+
+        public Edge(String name, double wt) {
+            toNode = name;
+            weight = wt;
+        }
+    }
+
 
     private static void readCorrespondence() throws IOException {
         // Correspondence file contains the correspondences (or substitution scores)
@@ -163,7 +165,8 @@ public class PathMatch {
 	}
 
     public static void createDAG() {
-        // Create a DAG G' from the query path Q and the input graph G
+        // Create and initialize DAG G' from the query path Q and the input graph G
+        // Add the vertices in the correct "levels"
 
         int totalNodesInDAG = 0;
 
@@ -171,6 +174,7 @@ public class PathMatch {
         int numLevels = query.size() + 2;
         dag = new ArrayList<>(numLevels);
 
+        // Add the source level to G'
         List<Vertex> sLevel = new ArrayList<Vertex>(1);
         Vertex s = new Vertex("Source", 0);
         sLevel.add(s);
@@ -185,6 +189,15 @@ public class PathMatch {
             for (int j=0; j<names.size(); j++) {
                 if (correspondence[i][j] != 0) {
                     Vertex v = new Vertex(names.get(j), correspondence[i][j]);
+
+                    // Add the edge "from Vertex to Sink", initialized to zero.
+                    Edge e1 = new Edge("Sink", 0);
+                    v.addEdge(e1);
+
+                    // Add the edge "from Source to Vertex", initialized to zero.
+                    Edge e2 = new Edge(names.get(j), 0);
+                    s.addEdge(e2);
+
                     level.add(v);
                     totalNodesInDAG++;
                 }
@@ -194,6 +207,7 @@ public class PathMatch {
             dag.add(level);
         }
 
+        // Add the sink level to G'
         List<Vertex> tLevel = new ArrayList<Vertex>(1);
         Vertex t = new Vertex("Sink", 0);
         tLevel.add(t);
@@ -201,9 +215,18 @@ public class PathMatch {
 
         System.out.println(dag.size());
 
+        // Add the edge weights
+        calculateDAGWeights();
     }
 
-	public static void calculateDAGWeights() {}
+	public static void calculateDAGWeights() {
+        // Calculate the edge weights for all vertices in the DAG G'
+
+
+
+    }
+
+
 	public static void queryTopPaths() {}
 
     public static void floyd() {
