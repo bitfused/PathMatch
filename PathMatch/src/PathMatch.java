@@ -222,6 +222,17 @@ public class PathMatch {
 	public static void calculateDAGWeights() {
         // Calculate the edge weights for all vertices in the DAG G'
 
+        int levels = dag.size();
+
+        // Calculate the edge weights for non-source and non-sink vertices
+        for (int i=1; i<levels-1; i++) {
+            // For each vertex in the current level of G' update the weights
+            for (Vertex v : dag.get(i)) {
+
+            }
+        }
+
+
 
 
     }
