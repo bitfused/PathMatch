@@ -195,12 +195,14 @@ public class PathMatch {
                     String fromName = names.get(j) + "_Lvl:" + lvl;
                     Vertex v = new Vertex(fromName, correspondence[i][j]);
 
-                    // Add the edge "from Vertex to Sink", initialized to zero.
-                    Edge e1 = new Edge("Sink", 0);
+                    // Add the edge "from Vertex to Sink"
+                    double wt = INDEL_PENALTY * ((query.size()-1) - i);
+                    Edge e1 = new Edge("Sink", wt);
                     v.addEdge(e1);
 
-                    // Add the edge "from Source to Vertex", initialized to zero.
-                    Edge e2 = new Edge(fromName, 0);
+                    // Add the edge "from Source to Vertex"
+                    wt = INDEL_PENALTY * i;
+                    Edge e2 = new Edge(fromName, wt);
                     s.addEdge(e2);
 
                     level.add(v);
@@ -264,8 +266,6 @@ public class PathMatch {
                 }
             }
         }
-
-        // Calculate the edge weights for source and sink vertices
         System.out.println(dag.size());
     }
 
