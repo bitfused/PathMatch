@@ -15,9 +15,9 @@ import org.jgrapht.graph.*;
 public class PathMatch {
 
     /* CONSTANTS */
-    static int NUM_TOP_PATHS = 1;                  // Number of pathways with top scores that are required to be in output
+    static int NUM_TOP_PATHS = 10;                  // Number of pathways with top scores that are required to be in output
     static int MAX_NUM_MISMATCHES_AND_GAPS = 1;    // Maximum number of mismatches and gaps allowed
-    static double INDEL_PENALTY = 1.0;             // Penalty for mismatches and gaps
+    static double INDEL_PENALTY = 23.0;             // Penalty for mismatches and gaps
     static double CORR_E_VALUE_CUTOFF= 1e200;      // Cutoff for determining similarity
 
     static String INPUT_NAME = "input";
@@ -92,9 +92,9 @@ public class PathMatch {
 
             if (value <= CORR_E_VALUE_CUTOFF) {
                 if(value <= 1e-299){
-                    correspondence[i][j]=Math.log(1e-299) * -1;
+                    correspondence[i][j]=Math.log(1e-299);
                 } else {
-                    correspondence[i][j]=Math.log(value) * -1;
+                    correspondence[i][j]=Math.log(value);
                 }
             }
         }
@@ -205,7 +205,7 @@ public class PathMatch {
                     v.addEdge(e1);
 
                     // Add the edge "from Source to Vertex"
-                    wt = INDEL_PENALTY * i;
+                    wt = correspondence[i][j] + INDEL_PENALTY * i;
                     Edge e2 = new Edge(fromName, wt);
                     s.addEdge(e2);
 
@@ -255,9 +255,23 @@ public class PathMatch {
                         // Edge weight will be the weight(v)
                         int dist = distance[names.indexOf(fromNode)][names.indexOf(toNode)];
                         if (dist <= MAX_NUM_MISMATCHES_AND_GAPS + 1) {
-                            int level = i + levelsDown;
-                            Edge e = new Edge(toNode+"_Lvl:"+level, v.weight + INDEL_PENALTY*(dist-1));
-                            v.addEdge(e);
+                            if (dist > levelsDown) {
+                                int level = i + levelsDown;
+                                Edge e = new Edge(toNode+"_Lvl:"+level, nextV.weight + INDEL_PENALTY*(dist-1));
+                                if (e.weight < 0) {
+                                    System.out.println("Negative edge weight.");
+                                }
+                                v.addEdge(e);
+                            } else {
+                                int level = i + levelsDown;
+                                Edge e = new Edge(toNode+"_Lvl:"+level, nextV.weight + INDEL_PENALTY*(levelsDown-1));
+                                if (e.weight < 0) {
+                                    System.out.println("Negative edge weight.");
+                                }
+                                v.addEdge(e);
+                            }
+
+
                         }
                         // "toNode" is not reachable.
                         // Edge weight will be MAX_FLT
@@ -272,9 +286,6 @@ public class PathMatch {
         }
         System.out.println(dag.size());
     }
-
-
-	public static void queryTopPaths() {}
 
     public static void floyd() {
     	distance = new int[graphSize][graphSize];
@@ -309,26 +320,53 @@ public class PathMatch {
 	}
     
     public static void kShortestPaths() {
-    //	SimpleDirectedWeightedGraph<String, DefaultWeightedEdge>  formattedDag = new SimpleDirectedWeightedGraph<String, DefaultWeightedEdge> (DefaultWeightedEdge.class); 
-        
-    	
-    	
-        SimpleDirectedWeightedGraph<Vertex, DefaultWeightedEdge>  graph = new SimpleDirectedWeightedGraph<Vertex, DefaultWeightedEdge> (DefaultWeightedEdge.class); 
-        Vertex start = new Vertex("asd", 0.0);
-        Vertex end = new Vertex("dsad", 10.0);
-        graph.addVertex(start);
-        graph.addVertex(end);
-        
-        DefaultWeightedEdge e1 = graph.addEdge(start, end); 
-        graph.setEdgeWeight(e1, 0); 
-        
-    	KShortestPaths<Vertex, DefaultWeightedEdge> kpath = new KShortestPaths<Vertex, DefaultWeightedEdge>(graph, start, 5);
-       
-        List<GraphPath<Vertex,DefaultWeightedEdge>> output = kpath.getPaths(end);
-        
+        // Create the template for storing the formatted DAG
+    	SimpleDirectedWeightedGraph<String, DefaultWeightedEdge> fDAG = new SimpleDirectedWeightedGraph<String, DefaultWeightedEdge> (DefaultWeightedEdge.class);
+
+        // All the vertices in the DAG can be obtained from the "source" level
+        Vertex source = dag.get(0).get(0);
+        fDAG.addVertex(source.fromNode);                                        // Add the source vertex
+
+        for (Edge e : source.edges) {
+            fDAG.addVertex(e.toNode);                                           // Add the rest of the vertices in DAG
+            DefaultWeightedEdge e1 = fDAG.addEdge(source.fromNode,e.toNode);
+            fDAG.setEdgeWeight(e1, e.weight);                                   // Add the corresponding edge weight "source -> vertex"
+        }
+
+        Vertex sink = dag.get(dag.size()-1).get(0);
+        fDAG.addVertex(sink.fromNode);                                          // Add the sink vertex
+
+
+        // Add the remaining edges to all non-sink/non-source vertices
+        for (int level=1; level<dag.size()-1; level++) {
+            for (Vertex v : dag.get(level)) {
+                for (Edge e : v.edges) {
+                    DefaultWeightedEdge edge = fDAG.addEdge(v.fromNode,e.toNode);
+                    fDAG.setEdgeWeight(edge, e.weight);
+                }
+            }
+        }
+
+//        List shortest_path = DijkstraShortestPath.findPathBetween(fDAG, source.fromNode, sink.fromNode);
+//        System.out.println(shortest_path);
+
+    	KShortestPaths<String, DefaultWeightedEdge> kpath = new KShortestPaths<String, DefaultWeightedEdge>(fDAG, source.fromNode, NUM_TOP_PATHS);
+
+        List<GraphPath<String,DefaultWeightedEdge>> output = kpath.getPaths(sink.fromNode);
+
         System.out.println("K-Shortest Paths:");
-        for(GraphPath<Vertex, DefaultWeightedEdge> lst : output) {
-        	System.out.println(lst.getEdgeList()); 
+        for(GraphPath<String, DefaultWeightedEdge> lst : output) {
+        	System.out.println(lst.getEdgeList());
+
+            double score = 0;
+            for (DefaultWeightedEdge e : lst.getEdgeList()) {
+                String start = e.toString().split(" : ")[0].trim();
+                String end = e.toString().split(" : ")[1].trim();
+                System.out.println(start + " --> " + end + " -- score = " + fDAG.getEdgeWeight(e));
+                score += fDAG.getEdgeWeight(e);
+            }
+            System.out.println("Score: " + score + "\n");
+
         }
     }
     
@@ -341,15 +379,12 @@ public class PathMatch {
             readCorrespondence();
             floyd();
             createDAG();
+            kShortestPaths();
             
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		//sampleGraph();
-		//System.out.println(Arrays.deepToString(graph));
-//		System.out.println(query.toString());
-//        System.out.println(correspondence[0][0]);
 	}
 
 }
