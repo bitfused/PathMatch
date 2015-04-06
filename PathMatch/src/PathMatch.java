@@ -7,6 +7,10 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.jgrapht.alg.*;
+import org.jgrapht.*;
+import org.jgrapht.graph.*;
+
 
 public class PathMatch {
 
@@ -273,6 +277,8 @@ public class PathMatch {
 	public static void queryTopPaths() {}
 
     public static void floyd() {
+    	distance = new int[graphSize][graphSize];
+    	path = new int[graphSize][graphSize];
 		// initialize
 
         distance = new int[graphSize][graphSize];
@@ -301,6 +307,32 @@ public class PathMatch {
 			}
 		}
 	}
+    
+    public static void kShortestPaths() {
+    //	SimpleDirectedWeightedGraph<String, DefaultWeightedEdge>  formattedDag = new SimpleDirectedWeightedGraph<String, DefaultWeightedEdge> (DefaultWeightedEdge.class); 
+        
+    	
+    	
+        SimpleDirectedWeightedGraph<Vertex, DefaultWeightedEdge>  graph = new SimpleDirectedWeightedGraph<Vertex, DefaultWeightedEdge> (DefaultWeightedEdge.class); 
+        Vertex start = new Vertex("asd", 0.0);
+        Vertex end = new Vertex("dsad", 10.0);
+        graph.addVertex(start);
+        graph.addVertex(end);
+        
+        DefaultWeightedEdge e1 = graph.addEdge(start, end); 
+        graph.setEdgeWeight(e1, 0); 
+        
+    	KShortestPaths<Vertex, DefaultWeightedEdge> kpath = new KShortestPaths<Vertex, DefaultWeightedEdge>(graph, start, 5);
+       
+        List<GraphPath<Vertex,DefaultWeightedEdge>> output = kpath.getPaths(end);
+        
+        System.out.println("K-Shortest Paths:");
+        for(GraphPath<Vertex, DefaultWeightedEdge> lst : output) {
+        	System.out.println(lst.getEdgeList()); 
+        }
+    }
+    
+
 	
 	public static void main(String [] args) {
 		try {
@@ -309,11 +341,12 @@ public class PathMatch {
             readCorrespondence();
             floyd();
             createDAG();
-
+            
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		//sampleGraph();
 		//System.out.println(Arrays.deepToString(graph));
 //		System.out.println(query.toString());
 //        System.out.println(correspondence[0][0]);
