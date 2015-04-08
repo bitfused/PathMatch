@@ -84,7 +84,11 @@ public class PathMatch {
             String[] line = myLine.split(" +");
 
             v1 = line[0];
-            v2 = line[1];
+            if (line[1].indexOf("|") == -1) {
+                v2 = line[1];
+            } else {
+                v2 = line[1].substring(0, line[1].indexOf("|"));
+            }
             value = Double.parseDouble(line[2]);
 
             int i = query.indexOf(v1);
@@ -120,7 +124,13 @@ public class PathMatch {
 		while ((myLine = bufRead.readLine()) != null) {
 
             // Add the first vertex of each line into the linked list
-			names.add(myLine.substring(0, myLine.indexOf(" ")));
+            String full = myLine.substring(0, myLine.indexOf(" "));
+
+            if (full.indexOf("|") == -1) {
+                names.add(myLine.substring(0, myLine.indexOf(" ")));
+            } else {
+                names.add(full.substring(0, full.indexOf("|")));
+            }
 		}
 		
 		// initialize graph adj. matrix once we know the number of nodes
@@ -143,11 +153,21 @@ public class PathMatch {
 			String[] line = myLine.split(" ");
 
             // For each line (first vertex), add the vertices (2nd vertex onwards) that it connects to.
-			int i = names.indexOf(line[0]);
+            int i;
+            if (line[0].indexOf("|") == -1) {
+                i = names.indexOf(line[0]);
+            } else {
+                i = names.indexOf(line[0].substring(0, line[0].indexOf("|")));
+            }
 			for (int n = 1; n < line.length; n++) {
-				int j = names.indexOf(line[n]);
-				if (j != -1) {
-					graph[i][j] = 1;
+                int j;
+			    if (line[n].indexOf("|") == -1) {
+                    j = names.indexOf(line[n]);
+                } else {
+                    j = names.indexOf(line[n].substring(0, line[n].indexOf("|")));
+                }
+                if (j != -1) {
+				graph[i][j] = 1;
 				}
 			}
 		}
@@ -374,7 +394,7 @@ public class PathMatch {
 	
 	public static void main(String [] args) {
 		try {
-			readGraph();
+            readGraph();
 			readQuery();
             readCorrespondence();
             floyd();
